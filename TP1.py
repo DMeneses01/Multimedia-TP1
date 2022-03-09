@@ -339,22 +339,22 @@ def encoder(img_name):
     #Conversão para modelo YCbCr
     Y, Cb, Cr = YCbCr(R_p, G_p, B_p)
 
-    Y_d, Cb_d, Cr_d = downsampling(Y, Cb, Cr, 2)
+    Y_d, Cb_d, Cr_d = downsampling(Y, Cb, Cr, 0)
 
     #Y_dct, Cb_dct, Cr_dct = dct(Y_d, Cb_d, Cr_d)
 
-    Y_dctb, Cb_dctb, Cr_dctb = dct_blocks(Y_d, Cb_d, Cr_d, 8)
+    Y_dctb, Cb_dctb, Cr_dctb = dct_blocks(Y_d, Cb_d, Cr_d, 64)
     
     return Y_dctb, Cb_dctb, Cr_dctb, img.shape[0], img.shape[1]
 
 
 def decoder(Y, Cb, Cr, lines, columns):
 
-    Y_dctb, Cb_dctb, Cr_dctb = reverse_dct_blocks(Y, Cb, Cr, 8)
+    Y_dctb, Cb_dctb, Cr_dctb = reverse_dct_blocks(Y, Cb, Cr, 64)
 
     #Y_rdct, Cb_rdct, Cr_rdct = reverse_dct(Y, Cb, Cr)
 
-    Y_u, Cb_u, Cr_u = upsampling(Y_dctb, Cb_dctb, Cr_dctb, 2)
+    Y_u, Cb_u, Cr_u = upsampling(Y_dctb, Cb_dctb, Cr_dctb, 0)
 
     R, G, B = reverse_ycbcr(Y_u, Cb_u, Cr_u)
     if test:
