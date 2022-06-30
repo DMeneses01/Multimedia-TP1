@@ -7,10 +7,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as clr
 import scipy.fftpack as fft
+import math
+
+test = False
 
 mat = [[0.299, 0.587, 0.114], [-0.168736, -0.331264, 0.5], [0.5, -0.418688, -0.081312]]
 
-test = True
+q_y = np.array([[16, 11, 10, 16, 24, 40, 51, 61],
+       [12, 12, 14, 19, 26, 58, 60, 55],
+       [14, 13, 16, 24, 40, 57, 69, 56],
+       [14, 17, 22, 29, 51, 87, 80, 62],
+       [18, 22, 37, 56, 68, 109, 103, 77],
+       [24, 35, 55, 64, 81, 104, 113, 92],
+       [49, 64, 78, 87, 103, 121, 120, 101],
+       [72, 92, 95, 98, 112, 100, 103, 99]])
+
+q_cbcr = np.array([[17, 18, 24, 47, 99, 99, 99, 99],
+          [18, 21, 26, 66, 99, 99, 99, 99],
+          [24, 26, 56, 99, 99, 99, 99, 99],
+          [47, 66, 99, 99, 99, 99, 99, 99],
+          [99, 99, 99, 99, 99, 99, 99, 99],
+          [99, 99, 99, 99, 99, 99, 99, 99],
+          [99, 99, 99, 99, 99, 99, 99, 99],
+          [99, 99, 99, 99, 99, 99, 99, 99]])
 
 
 def menu_inicial():
@@ -143,10 +162,11 @@ def YCbCr(R_p, G_p, B_p):
     Cb = mat[1][0]*R_p + mat[1][1]*G_p + mat[1][2]*B_p + 128
     Cr = mat[2][0]*R_p + mat[2][1]*G_p + mat[2][2]*B_p + 128
 
-    cmGray = colormap(1, 1, 1, 'myGray')
-    show_colormap(Y, cmGray, "Canal Y da imagem com colormap cinzento")
-    show_colormap(Cb, cmGray, "Canal Cb da imagem com colormap cinzento")
-    show_colormap(Cr, cmGray, "Canal Cr da imagem com colormap cinzento")
+    if test:
+        cmGray = colormap(1, 1, 1, 'myGray')
+        show_colormap(Y, cmGray, "Canal Y da imagem com colormap cinzento")
+        show_colormap(Cb, cmGray, "Canal Cb da imagem com colormap cinzento")
+        show_colormap(Cr, cmGray, "Canal Cr da imagem com colormap cinzento")
 
     return Y, Cb, Cr
 
@@ -207,14 +227,15 @@ def downsampling(Y, Cb, Cr, prop):
 
     #print(list(Cb_d[:8, :8]))
 
-    cmGray = colormap(1,1,1,'Gray')
+    if test:
+        cmGray = colormap(1,1,1,'Gray')
 
-    show_colormap(Y_d, cmGray, 'Canal Y com downsampling 4:2:2 visto com colormap cinzento')
-    print("Dimensão do canal Y após downsampling", Y_d.shape)
-    show_colormap(Cb_d, cmGray, 'Canal Cb com downsampling 4:2:2 visto com colormap cinzento')
-    print("Dimensão do canal Cb após downsampling", Cb_d.shape)
-    show_colormap(Cr_d, cmGray, 'Canal Cr com downsampling 4:2:2 visto com colormap cinzento')
-    print("Dimensão do canal Cr após downsampling", Cr_d.shape)
+        show_colormap(Y_d, cmGray, 'Canal Y com downsampling 4:2:2 visto com colormap cinzento')
+        print("Dimensão do canal Y após downsampling", Y_d.shape)
+        show_colormap(Cb_d, cmGray, 'Canal Cb com downsampling 4:2:2 visto com colormap cinzento')
+        print("Dimensão do canal Cb após downsampling", Cb_d.shape)
+        show_colormap(Cr_d, cmGray, 'Canal Cr com downsampling 4:2:2 visto com colormap cinzento')
+        print("Dimensão do canal Cr após downsampling", Cr_d.shape)
 
     return Y_d, Cb_d, Cr_d
 
@@ -271,12 +292,37 @@ def dct_blocks(Y, Cb, Cr, n_blocks):
     dctLogCb = np.log(np.abs(Cb_dct) + 0.0001)
     dctLogCr = np.log(np.abs(Cr_dct) + 0.0001)
 
-    cmGray = colormap(1, 1, 1, 'myGray')
-    show_colormap(dctLogY, cmGray, "Canal Y com DCT " + str(n_blocks) + "x" + str(n_blocks) + " com colormap cinzento")
-    show_colormap(dctLogCb, cmGray, "Canal Cb com DCT " + str(n_blocks) + "x" + str(n_blocks) + " com colormap cinzento")
-    show_colormap(dctLogCr, cmGray, "Canal Cr com DCT " + str(n_blocks) + "x" + str(n_blocks) + " com colormap cinzento")
+    if test:
+        cmGray = colormap(1, 1, 1, 'myGray')
+        show_colormap(dctLogY, cmGray, "Canal Y com DCT " + str(n_blocks) + "x" + str(n_blocks) + " com colormap cinzento")
+        show_colormap(dctLogCb, cmGray, "Canal Cb com DCT " + str(n_blocks) + "x" + str(n_blocks) + " com colormap cinzento")
+        show_colormap(dctLogCr, cmGray, "Canal Cr com DCT " + str(n_blocks) + "x" + str(n_blocks) + " com colormap cinzento")
 
     return Y_dct, Cb_dct, Cr_dct
+
+
+def q_matrix(quality):
+    fac = 0
+
+    if (quality < 50):
+        fac = 50 / quality
+    else:
+        fac = (100-quality)/50
+    
+    if (fac != 0):
+        q_yn = np.round(fac * q_y)
+        q_cbcrn = np.round(fac * q_cbcr)
+    else:
+        q_yn = np.ones(q_y.shape)
+        q_cbcrn = np.ones(q_y.shape)
+
+    q_yn[q_yn>255] = 255
+    q_yn[q_yn<1] = 1
+
+    q_cbcrn[q_cbcrn>255] = 255
+    q_cbcrn[q_cbcrn<1] = 1
+
+    return q_yn, q_cbcrn
 
 
 def reverse_dct_blocks(Y_dct, Cb_dct, Cr_dct, n_blocks):
@@ -299,21 +345,143 @@ def reverse_dct_blocks(Y_dct, Cb_dct, Cr_dct, n_blocks):
     dctLogCb = np.log(np.abs(Cb) + 0.0001)
     dctLogCr = np.log(np.abs(Cr) + 0.0001)
 
-    cmGray = colormap(1, 1, 1, 'myGray')
-    show_colormap(dctLogY, cmGray, "Canal Y com DCT " + str(n_blocks) + "x" + str(n_blocks) + " revertido com colormap cinzento")
-    show_colormap(dctLogCb, cmGray, "Canal Cb com DCT " + str(n_blocks) + "x" + str(n_blocks) + " revertido com colormap cinzento")
-    show_colormap(dctLogCr, cmGray, "Canal Cr com DCT " + str(n_blocks) + "x" + str(n_blocks) + " revertido com colormap cinzento")
+    if test:
+        cmGray = colormap(1, 1, 1, 'myGray')
+        show_colormap(dctLogY, cmGray, "Canal Y com DCT " + str(n_blocks) + "x" + str(n_blocks) + " revertido com colormap cinzento")
+        show_colormap(dctLogCb, cmGray, "Canal Cb com DCT " + str(n_blocks) + "x" + str(n_blocks) + " revertido com colormap cinzento")
+        show_colormap(dctLogCr, cmGray, "Canal Cr com DCT " + str(n_blocks) + "x" + str(n_blocks) + " revertido com colormap cinzento")
 
     return Y, Cb, Cr
 
 
-def encoder(img_name):
+def quant_dct(Y_dct, Cb_dct, Cr_dct,q_yn, q_cbcrn):
+
+    for i in range(int(Y_dct.shape[0]/8)):
+        for j in range(int(Y_dct.shape[1]/8)):
+            Y_dct[i*8:i*8+8, j*8:j*8+8] = np.round(Y_dct[i*8:i*8+8, j*8:j*8+8]/q_yn)
+
+    for i in range(int(Cb_dct.shape[0]/8)):
+        for j in range(int(Cb_dct.shape[1]/8)):
+            Cb_dct[i*8:i*8+8, j*8:j*8+8] = np.round(Cb_dct[i*8:i*8+8, j*8:j*8+8]/q_cbcrn)
+            Cr_dct[i*8:i*8+8, j*8:j*8+8] = np.round(Cr_dct[i*8:i*8+8, j*8:j*8+8]/q_cbcrn)
+
+
+    if test:
+        quantLogY = np.log(np.abs(Y_dct) + 0.0001)
+        quantLogCb = np.log(np.abs(Cb_dct) + 0.0001)
+        quantLogCr = np.log(np.abs(Cr_dct) + 0.0001)
+
+        
+        cmGray = colormap(1, 1, 1, 'myGray')
+        show_colormap(quantLogY, cmGray, "Canal Y com DCT quantizada 8x8 com colormap cinzento com qualidade 100")
+        show_colormap(quantLogCb, cmGray, "Canal Cb com DCT quantizada 8x8 com colormap cinzento com qualidade 100")
+        show_colormap(quantLogCr, cmGray, "Canal Cr com DCT quantizada 8x8 com colormap cinzento com qualidade 100")
+
+    return Y_dct, Cb_dct, Cr_dct
+
+
+def reverse_quant_dct(Y_dct, Cb_dct, Cr_dct, q_yn, q_cbcrn):
+
+    for i in range(int(Y_dct.shape[0]/8)):
+        for j in range(int(Y_dct.shape[1]/8)):
+            Y_dct[i*8:i*8+8, j*8:j*8+8] = Y_dct[i*8:i*8+8, j*8:j*8+8] * q_yn
+
+    for i in range(int(Cb_dct.shape[0]/8)):
+        for j in range(int(Cb_dct.shape[1]/8)):
+            Cb_dct[i*8:i*8+8, j*8:j*8+8] = Cb_dct[i*8:i*8+8, j*8:j*8+8] * q_cbcrn
+            Cr_dct[i*8:i*8+8, j*8:j*8+8] = Cr_dct[i*8:i*8+8, j*8:j*8+8] * q_cbcrn
+
+    return Y_dct, Cb_dct, Cr_dct
+
+
+def dpcm(Y_qdct, Cb_qdct, Cr_qdct):
+    Y_dpcm = np.copy(Y_qdct)
+    Cb_dpcm = np.copy(Cb_qdct)
+    Cr_dpcm = np.copy(Cr_qdct)
+
+    for i in range(int(Y_qdct.shape[0]/8)):
+        for j in range(int(Y_qdct.shape[1]/8)):
+            if (i != 0):
+                if (j != 0):
+                    Y_dpcm[i*8, j*8] = Y_qdct[i*8, j*8] - Y_qdct[i*8, j*8-8]
+                else:
+                    Y_dpcm[i*8, j*8] = Y_qdct[i*8, j*8] - Y_qdct[i*8-8, int(Y_qdct.shape[1])-8]
+            else:
+                if (j != 0):
+                    Y_dpcm[i*8, j*8] = Y_qdct[i*8, j*8] - Y_qdct[i*8, j*8-8]
+            
+
+    for i in range(int(Cb_qdct.shape[0]/8)):
+        for j in range(int(Cb_qdct.shape[1]/8)):
+            if (i!=0):
+                if (j != 0):
+                    Cb_dpcm[i*8, j*8] = Cb_qdct[i*8, j*8] - Cb_qdct[i*8, j*8-8]
+                    Cr_dpcm[i*8, j*8] = Cr_qdct[i*8, j*8] - Cr_qdct[i*8, j*8-8]
+                else:
+                    Cb_dpcm[i*8, j*8] = Cb_qdct[i*8, j*8] - Cb_qdct[i*8-8, int(Cb_qdct.shape[1])-8]
+                    Cr_dpcm[i*8, j*8] = Cr_qdct[i*8, j*8] - Cr_qdct[i*8-8, int(Cb_qdct.shape[1])-8]
+            else:
+                if (j != 0):
+                    Cb_dpcm[i*8, j*8] = Cb_qdct[i*8, j*8] - Cb_qdct[i*8, j*8-8]
+                    Cr_dpcm[i*8, j*8] = Cr_qdct[i*8, j*8] - Cr_qdct[i*8, j*8-8]
+
+
+    if test:
+        quantLogY = np.log(np.abs(Y_dpcm) + 0.0001)
+        quantLogCb = np.log(np.abs(Cb_dpcm) + 0.0001)
+        quantLogCr = np.log(np.abs(Cr_dpcm) + 0.0001)
+
+        
+        cmGray = colormap(1, 1, 1, 'myGray')
+        show_colormap(quantLogY, cmGray, "Canal Y com DCT quantizada e DPCM 8x8 com colormap cinzento com qualidade 75")
+        show_colormap(quantLogCb, cmGray, "Canal Cb com DCT quantizada e DPCM 8x8 com colormap cinzento com qualidade 75")
+        show_colormap(quantLogCr, cmGray, "Canal Cr com DCT quantizada e DPCM 8x8 com colormap cinzento com qualidade 75")           
+
+    return Y_dpcm, Cb_dpcm, Cr_dpcm
+
+
+def reverse_dpcm(Y_dpcm, Cb_dpcm, Cr_dpcm):
+
+    Y_qdct = np.copy(Y_dpcm)
+    Cb_qdct = np.copy(Cb_dpcm)
+    Cr_qdct = np.copy(Cr_dpcm)
+
+    for i in range(int(Y_dpcm.shape[0]/8)):
+        for j in range(int(Y_dpcm.shape[1]/8)):
+            if (i!=0):
+                if (j != 0):
+                    Y_qdct[i*8, j*8] = Y_qdct[i*8, j*8-8] + Y_dpcm[i*8, j*8]
+                else:
+                    Y_qdct[i*8, j*8] = Y_qdct[i*8-8, int(Y_dpcm.shape[1])-8] + Y_dpcm[i*8, j*8]
+            else:
+                if (j != 0):
+                    Y_qdct[i*8, j*8] = Y_qdct[i*8, j*8-8] + Y_dpcm[i*8, j*8]
+
+    for i in range(int(Cb_dpcm.shape[0]/8)):
+        for j in range(int(Cb_dpcm.shape[1]/8)):
+            if (i!=0):
+                if (j != 0):
+                    Cb_qdct[i*8, j*8] = Cb_qdct[i*8, j*8-8] + Cb_dpcm[i*8, j*8] 
+                    Cr_qdct[i*8, j*8] = Cr_qdct[i*8, j*8-8] + Cr_dpcm[i*8, j*8] 
+                else:
+                    Cb_qdct[i*8, j*8] = Cb_qdct[i*8-8, int(Cb_dpcm.shape[1])-8] + Cb_dpcm[i*8, j*8] 
+                    Cr_qdct[i*8, j*8] = Cr_qdct[i*8-8, int(Cb_dpcm.shape[1])-8] + Cr_dpcm[i*8, j*8] 
+            else:
+                if (j != 0):
+                    Cb_qdct[i*8, j*8] = Cb_qdct[i*8, j*8-8] + Cb_dpcm[i*8, j*8] 
+                    Cr_qdct[i*8, j*8] = Cr_qdct[i*8, j*8-8] + Cr_dpcm[i*8, j*8] 
+
+    return Y_qdct, Cb_qdct, Cr_qdct
+
+
+def encoder(img_name, q_yn, q_cbcrn):
     plt.close('all')
     
     img = plt.imread(img_name)
 
+    show_img("Imagem Original: " + img_name, img)
+
     if test:
-        show_img("Imagem Original: " + img_name, img)
         print("Dimensão original da imagem: " + str(img.shape))
 
     #Colormaps do RGB
@@ -328,10 +496,11 @@ def encoder(img_name):
     #Separação dos canais RGB
     R, G, B = separate_rgb(img)
 
-    #Ver cada um dos canais com o colormap adequado
-    show_colormap(R, cmRed, "Canal R da imagem original com colormap vermelho")
-    show_colormap(G, cmGreen, "Canal G da imagem original com colormap verde")
-    show_colormap(B, cmBlue, "Canal B da imagem original com colormap azul")
+    if test:
+        #Ver cada um dos canais com o colormap adequado
+        show_colormap(R, cmRed, "Canal R da imagem original com colormap vermelho")
+        show_colormap(G, cmGreen, "Canal G da imagem original com colormap verde")
+        show_colormap(B, cmBlue, "Canal B da imagem original com colormap azul")
 
     #Padding da imagem
     R_p, G_p, B_p = padding(R, G, B)
@@ -343,14 +512,28 @@ def encoder(img_name):
 
     #Y_dct, Cb_dct, Cr_dct = dct(Y_d, Cb_d, Cr_d)
 
-    Y_dctb, Cb_dctb, Cr_dctb = dct_blocks(Y_d, Cb_d, Cr_d, 64)
+    Y_dctb, Cb_dctb, Cr_dctb = dct_blocks(Y_d, Cb_d, Cr_d, 8)
+
+    Y_qdct, Cb_qdct, Cr_qdct = quant_dct(Y_dctb, Cb_dctb, Cr_dctb, q_yn, q_cbcrn)
+
+    #print(Y_qdct[0:8, 8:16])
+
+    Y_dpcm, Cb_dpcm, Cr_dpcm = dpcm(Y_qdct, Cb_qdct, Cr_qdct)
+
+    #print(Y_dpcm[0:8, 8:16])
     
-    return Y_dctb, Cb_dctb, Cr_dctb, img.shape[0], img.shape[1]
+    return img, Y, Y_dpcm, Cb_dpcm, Cr_dpcm, img.shape[0], img.shape[1]
 
 
-def decoder(Y, Cb, Cr, lines, columns):
+def decoder(Y, Cb, Cr, lines, columns, q_yn, q_cbcrn):
 
-    Y_dctb, Cb_dctb, Cr_dctb = reverse_dct_blocks(Y, Cb, Cr, 64)
+    Y_qdct, Cb_qdct, Cr_qdct = reverse_dpcm(Y, Cb, Cr)
+
+    #print(Y_qdct[0:8, 8:16])
+
+    Y_dct, Cb_dct, Cr_dct = reverse_quant_dct(Y_qdct, Cb_qdct, Cr_qdct, q_yn, q_cbcrn)
+
+    Y_dctb, Cb_dctb, Cr_dctb = reverse_dct_blocks(Y_dct, Cb_dct, Cr_dct, 8)
 
     #Y_rdct, Cb_rdct, Cr_rdct = reverse_dct(Y, Cb, Cr)
 
@@ -368,14 +551,39 @@ def decoder(Y, Cb, Cr, lines, columns):
 
     #Junção dos canais RGB de forma a obter a imagem original
     joined = join_rgb(R_unp, G_unp, B_unp, R_unp.dtype)
-    show_img("Imagem novamente junta", list(joined))
+    show_img("Imagem descomprimida", list(joined))
+
+    return Y_u, joined
 
 
 
 def main():
     img_name = menu_inicial()
-    Y, Cb, Cr, lines, columns = encoder(img_name)
-    decoder(Y, Cb, Cr, lines, columns)
+    q_yn, q_cbcrn = q_matrix(100)
+    img_or, Y_or, Y, Cb, Cr, lines, columns = encoder(img_name, q_yn, q_cbcrn)
+    Y_dec, decoded = decoder(Y, Cb, Cr, lines, columns, q_yn, q_cbcrn)
+
+    img_or = img_or.astype(np.float64)
+
+    cmGray = colormap(1, 1, 1, 'myGray')
+
+    e = abs(Y_or - Y_dec)
+    #print(e[0:8, 8:16])
+    show_colormap(e, cmGray, "error")
+
+    mse = (np.sum((img_or - decoded)**2)) / (lines*columns)
+    print ("MSE:", mse)
+
+    rmse = math.sqrt(mse)
+    print ("RMSE:", rmse)
+
+    pot = (np.sum((img_or)**2)) / (lines*columns)
+    snr = 10 * math.log10(pot/mse)
+    print ("SNR:", snr)
+
+    psnr = 10 * math.log10((np.max(img_or)**2)/mse)
+    print ("PSNR:", psnr)
+
 
 if __name__ == "__main__":
     main()
